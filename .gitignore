@@ -3,3 +3,9 @@
 
 # Ignore pycache folders
 __pycache__
+
+# Temporarily ignore experiment data folders to avoid
+# saving large binary files
+Baseline
+PreluComparison
+Experiment*
