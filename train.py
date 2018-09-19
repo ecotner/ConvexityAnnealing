@@ -3,6 +3,7 @@ Date: August 28, 2018
 Author: Eric Cotner, UCLA Dept. of Physics and Astronomy
 
 Gathers MNIST data, splits it into training, validation and test sets, then initializes a model and trains on it.
+
 """
 
 import os
@@ -27,8 +28,8 @@ utils.set_global_seed(c.SEED, use_parallelism=c.USE_PARALLELISM)
 # y_test.shape = (10000,)
 MNIST = keras.datasets.mnist
 (X_train, y_train), (X_test, y_test) = MNIST.load_data()
-X_train = X_train[:5000]
-y_train = y_train[:5000]
+#X_train = X_train[:100]
+#y_train = y_train[:100]
 
 # Preprocess the data (reshape, rescale, etc.)
 X_train = X_train.reshape(X_train.shape[0], 28, 28, 1).astype('float32') / 255
@@ -49,7 +50,23 @@ y_train = y_train[split_idx:]
 # Create model from config
 M = Model(c)
 M.build_model()
+#M.load()
 
 # Initiate training
 M.train(X_train, y_train, validation_data=(X_val, y_val))
-"loss: 0.6031 - acc: 0.8206 - val_loss: 0.4208 - val_acc: 0.8920"
+
+# Save model
+#M.save()       # Only want to save if model has improved
+del M, c
+"""
+print("Training a second time!!!")
+c = Config()
+K.clear_session()
+M = Model(c)
+M.build_model()
+M.load()
+print(M.predict(X_val))
+M.train(X_train, y_train, validation_data=(X_val, y_val))
+#print(M.predict(X_val))
+#print(y_val)
+"""
