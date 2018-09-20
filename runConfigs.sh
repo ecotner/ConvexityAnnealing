@@ -7,9 +7,9 @@
 # directory and grabs the next one, repeating until ConfigFiles is empty.
 
 # While ConfigFiles is not empty
-while [ -n "$(ls Experiments/ConfigFiles)" ]; do
+while [ -n "$(ls Experiments/ConfigQueue)" ]; do
 	# Move first available file to the working directory
-	fpath=$(echo Experiments/ConfigFiles/*.py)	# Gets all file paths
+	fpath=$(echo Experiments/ConfigQueue/*.py)	# Gets all file paths
 	fpath=${fpath%% *}				# Gets first file path
 	fname=${fpath##*/}				# Gets file name
 	mv "$fpath" "config.py"				# Move to pwd
@@ -18,7 +18,7 @@ while [ -n "$(ls Experiments/ConfigFiles)" ]; do
 	python3 train.py
 	# Move config into generated directory
 	expName=$(python3 -c "import config; print(config.Config().NAME)")	# Get experiment name from python file
-	mv "config.py" "Experiments/${expName}"
+	mv "config.py" "Experiments/${expName}/config_${expName}"
 	echo "Done training ${expName}"
 done
 # Print "done"?
