@@ -108,16 +108,19 @@ class Model(object):
         else: raise Exception("Unknown regularizer")
 
         # Hidden layers
-        if self.config.THETA_TRAINABLE:
-            for L in self.config.ARCHITECTURE:
-                if L[0] == "conv2d":
-                    X = KL.Conv2D(**L[1], kernel_regularizer=reg_func)(X)
-                    if L[2]["pooling"] is not None:
-                        X = KL.MaxPool2D(pool_size=(2,2))(X)
-                    if self.config.THETA_TRAINABLE:
-                        X = KL.PReLU(alpha_initializer='ones', shared_axes=[1,2,3])(X)
-                    else:
-                        X = KL.Lambda(tunable_relu, arguments={"theta": self.theta})(X)
+        for L in self.config.ARCHITECTURE:
+            if L[0] == "conv2d":
+                X = KL.Conv2D(**L[1], kernel_regularizer=reg_func)(X)
+                if L[2]["pooling"] is not None:
+                    X = KL.MaxPool2D(pool_size=(2,2))(X)
+            elif L[0] == "dense":
+                X = KL.Dense(**L[1], kernel_regularizer=reg_func)(X)
+
+            # Activation functions
+            if self.config.THETA_TRAINABLE:
+                X = KL.PReLU(alpha_initializer='ones', shared_axes=[1,2,3])(X)
+            else:
+                X = KL.Lambda(tunable_relu, arguments={"theta": self.theta})(X)
 
         # Output layer
         X = KL.Flatten()(X)
