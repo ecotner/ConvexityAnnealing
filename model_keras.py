@@ -5,14 +5,6 @@ Author: Eric Cotner, UCLA Dept. of Physics and Astronomy
 Wrapper class for Keras model.
 Constructs the neural network architecture, and specifies the training, prediction, saving/loading procedures.
 
-xTODO: add support for learning rate function
-xTODO: add support for tunable ReLU activation
-xTODO: add support for learnable PReLU activation
-xTODO: add method for saving NN weights
-xTODO: add method for loading saved NN weights
-xTODO: add prediction method
-xTODO: add tensorboard monitoring
-xTODO: figure out way to save learning curve/progress to file
 """
 
 ##############################################
@@ -61,8 +53,10 @@ class CSVLoggerCustom(KC.CSVLogger):
         with open(self.logdir+"hyperparameters.log", "w+") as fo:
             fo.write(self.mod.config.NAME + " hyperparameters\n")
             fo.write("Date/time: {}\n\n".format(time.ctime(self.start_time)))
-            for param in ["DESCRIPTION", "SEED", "MAX_EPOCHS", "VAL_SPLIT", "BATCH_SIZE", "LEARNING_DECAY",
-                          "INITIAL_LR", "THETA_TRAINABLE", "THETA_DECAY", "INITIAL_THETA",
+            for param in ["DESCRIPTION", "SEED", "MAX_EPOCHS", "VAL_SPLIT", "BATCH_SIZE",
+                          "LEARNING_DECAY", "INITIAL_LR",
+                          "REGULARIZER", "REGULARIZATION_COEFFICIENT",
+                          "THETA_TRAINABLE", "THETA_DECAY", "INITIAL_THETA",
                           "USE_PARALLELISM", "OPTIMIZER", "LOSS", "ARCHITECTURE"]:
                 fo.write("{}: {}\n".format(param, getattr(self.mod.config, param)))
 
@@ -108,17 +102,22 @@ class Model(object):
         inputs = KL.Input(shape=self.config.INPUT_SHAPE)
         X = inputs
 
+        # Set regularizer
+        if self.config.REGULARIZER == "L1": reg_func = keras.regularizers.l1(self.config.REGULARIZATION_COEFFICIENT)
+        elif self.config.REGULARIZER == "L2": reg_func = keras.regularizers.l2(self.config.REGULARIZATION_COEFFICIENT)
+        else: raise Exception("Unknown regularizer")
+
         # Hidden layers
-        if self.config.THETA_TRAINABLE:     # TODO: build model using trainable prelu activations
+        if self.config.THETA_TRAINABLE:
             for L in self.config.ARCHITECTURE:
                 if L[0] == "conv2d":
-                    X = KL.Conv2D(**L[1])(X)
-                    X = KL.PReLU(alpha_initializer='ones', shared_axes=[1,2,3])(X)
-        else:                               # TODO: alter layers to allow for tunable theta
-            for L in self.config.ARCHITECTURE:
-                if L[0] == "conv2d":
-                    X = KL.Conv2D(**L[1])(X)
-                    X = KL.Lambda(tunable_relu, arguments={"theta": self.theta})(X)
+                    X = KL.Conv2D(**L[1], kernel_regularizer=reg_func)(X)
+                    if L[2]["pooling"] is not None:
+                        X = KL.MaxPool2D(pool_size=(2,2))(X)
+                    if self.config.THETA_TRAINABLE:
+                        X = KL.PReLU(alpha_initializer='ones', shared_axes=[1,2,3])(X)
+                    else:
+                        X = KL.Lambda(tunable_relu, arguments={"theta": self.theta})(X)
 
         # Output layer
         X = KL.Flatten()(X)
@@ -167,9 +166,13 @@ class Model(object):
         self.model.save_weights(self.config.SAVE_PATH + "ModelWeights.h5")
 
     def load(self):
-        # First build the model, then load weights
+        # First build the model, then load weights, then compile
         self.build_model()
         self.model.load_weights(self.config.SAVE_PATH + "ModelWeights.h5")
+        opt = keras.optimizers.Adam()
+        self.model.compile(optimizer=opt,
+                           loss=self.config.LOSS,
+                           metrics=self.config.METRICS)
 
     def predict(self, X):
         return self.model.predict(X)
