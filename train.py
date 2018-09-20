@@ -28,8 +28,9 @@ utils.set_global_seed(c.SEED, use_parallelism=c.USE_PARALLELISM)
 # y_test.shape = (10000,)
 MNIST = keras.datasets.mnist
 (X_train, y_train), (X_test, y_test) = MNIST.load_data()
-#X_train = X_train[:100]
-#y_train = y_train[:100]
+if c.NAME.lower() == "test":
+    X_train = X_train[:1000]
+    y_train = y_train[:1000]
 
 # Preprocess the data (reshape, rescale, etc.)
 X_train = X_train.reshape(X_train.shape[0], 28, 28, 1).astype('float32') / 255
