@@ -6,7 +6,8 @@ The only paper I could find on using graduated optimization in neural networks i
 Here, I'll try to achieve the same result, but instead of smoothing via sampling, we'll start from a convex optimization problem (neural network with linear activation functions), and gradually make the problem more nonconvex by changing the activation function so that it looks more like a ReLU.
 
 ## TODO:
-* Make a script that takes the log data and makes plots
+* Fix workflow so that empty experiment directories aren't generated each time a config file is run
+    * Put directory-generating code in train.py so new directory is only generated at training time if needed
 * Perform experiments
     1) Fix θ=0 (normal ReLU) for baseline comparison
     2) Start at θ=π/4 (linear activation), and slowly reduce to θ=0 over fixed period
@@ -14,6 +15,9 @@ Here, I'll try to achieve the same result, but instead of smoothing via sampling
     4) Make θ a trainable parameter, but with each neuron having its own independent activation.
 
 ## Done:
+* Make a script that takes the log data and makes plots
+    * Make a Youden plots for comparing the different experiments?
+        * Different theta schedules can be different colors
 * Make configuration files for each experiment beforehand, then write a bash script to iterate through training procedure for each of them
 * Add max pooling between conv layers
 * Add regularization! (L1 and L2)
