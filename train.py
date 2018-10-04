@@ -7,9 +7,6 @@ Gathers MNIST data, splits it into training, validation and test sets, then init
 """
 
 import os
-import random as rn
-import numpy as np
-import tensorflow as tf
 from tensorflow import keras
 K = keras.backend
 KU = keras.utils
@@ -17,6 +14,7 @@ from config import Config
 c = Config()
 from model_keras import Model
 import utils
+import re
 
 # Set seeds
 utils.set_global_seed(c.SEED, use_parallelism=c.USE_PARALLELISM)
@@ -28,7 +26,7 @@ utils.set_global_seed(c.SEED, use_parallelism=c.USE_PARALLELISM)
 # y_test.shape = (10000,)
 MNIST = keras.datasets.mnist
 (X_train, y_train), (X_test, y_test) = MNIST.load_data()
-if c.NAME.lower() == "test":
+if re.search("test", c.NAME.lower()):
     X_train = X_train[:1000]
     y_train = y_train[:1000]
 
@@ -53,12 +51,17 @@ M = Model(c)
 M.build_model()
 #M.load()
 
+# Make experiment directory if it doesn't exist
+try:
+    os.mkdir(M.config.SAVE_PATH)
+except FileExistsError: pass
+
 # Initiate training
 M.train(X_train, y_train, validation_data=(X_val, y_val))
 
 # Save model
 #M.save()       # Only want to save if model has improved
-del M, c
+#del M, c
 """
 print("Training a second time!!!")
 c = Config()
