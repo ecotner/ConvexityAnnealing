@@ -5,6 +5,12 @@ The only paper I could find on using graduated optimization in neural networks i
 
 Here, I'll try to achieve the same result, but instead of smoothing via sampling, we'll start from a convex optimization problem (neural network with linear activation functions), and gradually make the problem more nonconvex by changing the activation function so that it looks more like a ReLU.
 
+The basic idea is that when the activation function is the identity, the loss function of any neural network, regardless of depth, becomes convex since the entire network reduces to a chain of matrix multiplications, which itself can be represented as a single matrix, and so the network is simply a linear model. This is easily optimized, as convex functions have been extensively studied and well-known techniques for their optimization have been established. Once this initially linear model has been sufficiently optimized, we tweak the activation functions to produce a small nonlinearity, and repeat the optimization process. Then we make the activation slightly more nonlinear, then optimize again. This series of steps repeats until the activation function has reached its fully nonlinear form.
+
+The specific nonlinearity that we will introduce is a modified leaky ReLU activation, where the slope of the x<0 branch is controlled by a parameter θ. Specifically, the activation is a(x) = max(x tanθ, x). Initially, θ=π/4, which causes the activation to reduce to the identity. But over the course of training, θ is annealed to zero, restoring the canonical ReLU activation.
+
+This approach has the advantage that the modification to the network is almost trivial, but has the potential to be immensely helpful during training. The initially linear activation allows gradients to propagate easily down to the lowest layers of the network during the initial epochs, and smooths the loss landscape so that larger initial learning rates can be used.
+
 ## TODO:
 * Fix workflow so that empty experiment directories aren't generated each time a config file is run
     * Put directory-generating code in train.py so new directory is only generated at training time if needed
